@@ -8,6 +8,7 @@ from pydantic import BaseModel, ConfigDict
 from sqlalchemy.orm import Session
 
 from app.auth.dependencies import get_current_db_user
+from app.chat.orchestrator import run_grounded_reply
 from app.chat.streaming import UI_MESSAGE_STREAM_HEADERS, stream_text_reply
 from app.database import chats
 from app.database.models import User
@@ -93,15 +94,8 @@ class ChatStreamRequest(BaseModel):
     messages: list[ChatStreamMessage]
 
 
-STUB_REPLY_TEMPLATE = (
-    'This is a stub reply from Document Copilot\'s backend. You asked: "{question}". '
-    "Real grounded answers with citations will replace this once retrieval and the "
-    "assistant agent are wired up."
-)
-
-
 @router.post("/chat/stream")
-def chat_stream(
+async def chat_stream(
     body: ChatStreamRequest,
     user: User = Depends(get_current_db_user),
     db: Session = Depends(get_db),
@@ -125,7 +119,20 @@ def chat_stream(
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "Empty message")
 
     chats.add_message(db, body.threadId, role="user", content=question)
-    reply_text = STUB_REPLY_TEMPLATE.format(question=question)
+
+    # Run retrieval + the agent + grounding validation to completion before
+    # streaming anything, so the client only ever sees an already-validated
+    # answer — never partial, unverified model output.
+    answer, retrieved_chunks = await run_grounded_reply(db, question)
+    reply_text = answer.answer_markdown
+    citation_records = [
+        {
+            "chunk_id": uuid.UUID(citation.chunk_id),
+            "page_label": retrieved_chunks[citation.chunk_id].page_label,
+            "excerpt": citation.quote,
+        }
+        for citation in answer.citations
+    ]
     thread_id = body.threadId
 
     async def event_stream():
@@ -142,6 +149,10 @@ def chat_stream(
         # FastAPI closes it as soon as this endpoint returns the
         # StreamingResponse, not after the stream finishes.
         with SessionLocal() as stream_db:
-            chats.add_message(stream_db, thread_id, role="assistant", content=reply_text)
+            assistant_message = chats.add_message(
+                stream_db, thread_id, role="assistant", content=reply_text
+            )
+            if citation_records:
+                chats.add_citations(stream_db, assistant_message.id, citation_records)
 
     return StreamingResponse(event_stream(), headers=UI_MESSAGE_STREAM_HEADERS)

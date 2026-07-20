@@ -7,7 +7,7 @@ from __future__ import annotations
 import uuid
 
 from sqlalchemy import select, text
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 from app.database.models import DocumentChunk
 
@@ -48,3 +48,31 @@ def full_text_search(
         {"query": query_text, "limit": limit},
     ).all()
     return [(row.id, row.rank) for row in rows]
+
+
+def fetch_chunk_by_id(db: Session, chunk_id: uuid.UUID) -> DocumentChunk | None:
+    return db.scalars(
+        select(DocumentChunk)
+        .where(DocumentChunk.id == chunk_id)
+        .options(selectinload(DocumentChunk.document))
+    ).first()
+
+
+def fetch_neighbor_chunks(
+    db: Session, document_id: uuid.UUID, chunk_index: int
+) -> tuple[DocumentChunk | None, DocumentChunk | None]:
+    """Bounded read of the chunks immediately before/after `chunk_index` in the
+    same document — never an open-ended range, so an agent tool built on this
+    can't be used to walk an entire filing.
+    """
+    chunks = db.scalars(
+        select(DocumentChunk)
+        .where(
+            DocumentChunk.document_id == document_id,
+            DocumentChunk.chunk_index.in_([chunk_index - 1, chunk_index + 1]),
+        )
+        .options(selectinload(DocumentChunk.document))
+    ).all()
+    before = next((c for c in chunks if c.chunk_index == chunk_index - 1), None)
+    after = next((c for c in chunks if c.chunk_index == chunk_index + 1), None)
+    return before, after

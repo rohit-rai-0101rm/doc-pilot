@@ -141,12 +141,12 @@ Client requirement: *questions about any filing in the curated corpus*
 
 Client requirements: *sourced answers, refuse when corpus lacks evidence, no stock picks*
 
-- [ ] `app/assistant/agent.py` — PydanticAI agent with typed deps + `GroundedAnswer` output
-- [ ] `app/assistant/instructions.md` — product contract (cite everything, no hallucination, no investment advice)
-- [ ] Agent tools: `search_filings`, `read_chunk`, `read_surrounding_chunks` (bounded — no agent SQL)
-- [ ] `app/chat/orchestrator.py` — retrieve → agent → validate → stream → persist
-- [ ] `app/grounding/validator.py` — every citation maps to a retrieved passage; fail closed on violation
-- [ ] Unit tests: citation extraction, grounding enforcement
+- [x] `app/assistant/agent.py` — PydanticAI agent with typed deps + `GroundedAnswer` output
+- [x] `app/assistant/instructions.md` — product contract (cite everything, no hallucination, no investment advice)
+- [x] Agent tools: `search_filings`, `read_chunk`, `read_surrounding_chunks` (bounded — no agent SQL)
+- [x] `app/chat/orchestrator.py` — retrieve → agent → validate → stream → persist
+- [x] `app/grounding/validator.py` — every citation maps to a retrieved passage; fail closed on violation
+- [x] Unit tests: citation extraction, grounding enforcement — 6 new tests passing; verified live end-to-end (grounded answer with real citations, refusal on investment-advice question, citations persisted to `message_citations`)
 
 ---
 

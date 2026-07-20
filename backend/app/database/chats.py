@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from app.database.models import ChatMessage, ChatThread
+from app.database.models import ChatMessage, ChatThread, MessageCitation
 
 
 def list_threads(db: Session, user_id: uuid.UUID) -> list[ChatThread]:
@@ -46,3 +46,16 @@ def add_message(db: Session, thread_id: uuid.UUID, role: str, content: str) -> C
     db.commit()
     db.refresh(message)
     return message
+
+
+def add_citations(db: Session, message_id: uuid.UUID, citations: list[dict]) -> None:
+    for citation in citations:
+        db.add(
+            MessageCitation(
+                message_id=message_id,
+                chunk_id=citation["chunk_id"],
+                page_label=citation.get("page_label"),
+                excerpt=citation.get("excerpt"),
+            )
+        )
+    db.commit()
