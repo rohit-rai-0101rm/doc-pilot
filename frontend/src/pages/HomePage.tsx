@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 
+import { ChatView } from '@/components/chat/ChatView';
 import { ThreadSidebar } from '@/components/chat/ThreadSidebar';
 import { Button } from '@/components/ui/button';
 import { createThread, getThread, listThreads, type Thread, type ThreadWithMessages } from '@/lib/api';
@@ -67,18 +68,10 @@ export function HomePage() {
         {loadingThreads ? (
           <p className="text-muted-foreground text-sm">Loading chats…</p>
         ) : selectedThread ? (
-          <div className="flex flex-col gap-2">
+          <>
             <h1 className="text-lg font-semibold">{selectedThread.title ?? 'Untitled chat'}</h1>
-            {selectedThread.messages.length === 0 ? (
-              <p className="text-muted-foreground text-sm">No messages yet.</p>
-            ) : (
-              selectedThread.messages.map((message) => (
-                <p key={message.id} className="text-sm">
-                  <span className="font-medium">{message.role}:</span> {message.content}
-                </p>
-              ))
-            )}
-          </div>
+            <ChatView key={selectedThread.id} thread={selectedThread} />
+          </>
         ) : (
           <p className="text-muted-foreground text-sm">Select a chat or start a new one.</p>
         )}

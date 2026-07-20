@@ -24,7 +24,7 @@ flowchart LR
         db[(Postgres<br/>chats, documents, chunks<br/>pgvector + full-text)]
     end
 
-    xai[xAI Grok<br/>LLM + embeddings]
+    gemini[Google Gemini<br/>LLM + embeddings]
     corpus[SEC filing corpus]
     ingestion[Ingestion pipeline<br/>download, parse, chunk, embed]
 
@@ -34,11 +34,11 @@ flowchart LR
     browser -->|chat request + JWT| backend
     backend -->|verify user| auth
     backend -->|retrieve passages<br/>persist chats + citations| db
-    backend -->|generate grounded answer| xai
+    backend -->|generate grounded answer| gemini
     backend -->|stream answer + citations| browser
 
     corpus --> ingestion
-    ingestion -->|create embeddings| xai
+    ingestion -->|create embeddings| gemini
     ingestion -->|store documents + chunks| db
 ```
 
@@ -67,7 +67,7 @@ Backend:
 - FastAPI + Uvicorn
 - Pydantic v2 + pydantic-settings
 - PydanticAI for typed LLM orchestration
-- OpenAI Python SDK pointed at xAI (`https://api.x.ai/v1`) for generation and embeddings
+- OpenAI Python SDK pointed at Google Gemini's OpenAI-compatible endpoint for generation and embeddings
 - Supabase Python client for server-side database access
 - SQLAlchemy models + Alembic migrations for schema management
 - Supabase `pgvector` for semantic search
@@ -82,7 +82,7 @@ Persistence:
 
 ## System Boundaries
 
-The frontend is responsible for user interaction, local UI state, and sending the authenticated user's request to the backend. It should never hold service-role credentials, run retrieval logic, call xAI or any LLM provider directly, or write privileged records to Supabase.
+The frontend is responsible for user interaction, local UI state, and sending the authenticated user's request to the backend. It should never hold service-role credentials, run retrieval logic, call Gemini or any LLM provider directly, or write privileged records to Supabase.
 
 The backend is responsible for request authorization, retrieval, prompt construction, LLM execution, citation validation, streaming responses, and durable persistence. It owns all privileged credentials and is the only service allowed to use the Supabase service-role key.
 
@@ -200,7 +200,7 @@ Retrieval and grounding remain independent from PydanticAI. This keeps ingestion
 
 Document Copilot uses hybrid retrieval:
 
-1. Embed the user's query with the configured xAI embedding model.
+1. Embed the user's query with the configured Gemini embedding model.
 2. Run a semantic search over `document_chunks.embedding` with `pgvector`.
 3. Run a lexical search over `document_chunks.search_vector` with Postgres full-text search.
 4. Fuse the two ranked lists in Python with Reciprocal Rank Fusion.
@@ -309,7 +309,7 @@ The workflow is:
 Normal tables and ordinary indexes should be represented in SQLAlchemy models where practical. The following should be written explicitly in migrations with `op.execute()` or carefully reviewed Alembic operations:
 
 - `create extension if not exists vector`
-- `vector(N)` embedding columns where `N` matches `XAI_EMBEDDING_DIMENSIONS` (if the SQLAlchemy type renderer is not sufficient)
+- `vector(N)` embedding columns where `N` matches `GEMINI_EMBEDDING_DIMENSIONS` (if the SQLAlchemy type renderer is not sufficient)
 - generated `tsvector` columns
 - HNSW indexes for vector search
 - GIN indexes for full-text search and JSON metadata
@@ -361,11 +361,11 @@ Backend settings:
 - `SUPABASE_ANON_KEY`
 - `SUPABASE_SERVICE_ROLE_KEY`
 - `DATABASE_URL` for Alembic and direct Postgres access
-- `XAI_API_KEY`
-- `XAI_BASE_URL` (default `https://api.x.ai/v1`)
-- `XAI_CHAT_MODEL`
-- `XAI_EMBEDDING_MODEL`
-- `XAI_EMBEDDING_DIMENSIONS`
+- `GEMINI_API_KEY`
+- `GEMINI_BASE_URL` (default `https://generativelanguage.googleapis.com/v1beta/openai/`)
+- `GEMINI_CHAT_MODEL`
+- `GEMINI_EMBEDDING_MODEL`
+- `GEMINI_EMBEDDING_DIMENSIONS`
 - `ALLOWED_ORIGINS`
 
 Do not read environment variables directly from components, route handlers, or services. Frontend code should use `src/lib/env.ts`. Backend code should use `app/config.py`.

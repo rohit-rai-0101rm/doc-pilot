@@ -11,7 +11,7 @@ This file is the source of truth for any coding agent (Claude Code, Cursor, Code
 - **Retrieval:** Supabase `pgvector` + Postgres full-text search
 - **Auth:** Supabase Auth
 - **Hosting:** Railway (backend service + frontend service)
-- **LLM + embeddings:** xAI Grok (via OpenAI-compatible API at `https://api.x.ai/v1`)
+- **LLM + embeddings:** Google Gemini (via OpenAI-compatible API)
 
 Stack is locked unless explicitly changed. Don't propose alternatives without a stated reason.
 
@@ -34,7 +34,7 @@ document-copilot/
 OK to depend on:
 
 - Things that are genuinely hard to get right (HTTP clients, ASGI servers, SQL drivers, parsers, LLM SDKs, ORM, migrations, auth SDKs).
-- The declared stack (FastAPI, React, Vite, Supabase clients, OpenAI Python SDK pointed at xAI, etc.).
+- The declared stack (FastAPI, React, Vite, Supabase clients, OpenAI Python SDK pointed at Gemini, etc.).
 
 Not OK:
 

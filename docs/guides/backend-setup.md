@@ -11,7 +11,7 @@ uv add fastapi uvicorn pydantic pydantic-settings httpx structlog openai supabas
 uv add --dev pytest ruff
 ```
 
-The `openai` package is the HTTP client for xAI's OpenAI-compatible API (`XAI_BASE_URL=https://api.x.ai/v1`). Configure chat and embedding model names via `XAI_CHAT_MODEL` and `XAI_EMBEDDING_MODEL` in `backend/.env`.
+The `openai` package is the HTTP client for Gemini's OpenAI-compatible API (`GEMINI_BASE_URL=https://generativelanguage.googleapis.com/v1beta/openai/`). Configure chat and embedding model names via `GEMINI_CHAT_MODEL` and `GEMINI_EMBEDDING_MODEL` in `backend/.env`.
 
 ## Database migrations
 
@@ -34,7 +34,7 @@ uv run alembic revision --autogenerate -m "add document tables"
 Always review the generated migration. Add explicit operations for Supabase/Postgres features that autogenerate cannot reliably infer:
 
 - `create extension if not exists vector`
-- `vector(N)` columns where `N` matches `XAI_EMBEDDING_DIMENSIONS`
+- `vector(N)` columns where `N` matches `GEMINI_EMBEDDING_DIMENSIONS`
 - generated `tsvector` columns
 - HNSW and GIN indexes
 - RLS enablement and policies

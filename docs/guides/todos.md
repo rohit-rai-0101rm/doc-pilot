@@ -2,7 +2,7 @@
 
 Work through these phases in order. **Backend-first** after foundation: the product value is retrieval + grounded AI; the frontend is a thin chat shell.
 
-**Stack:** FastAPI · Supabase · pgvector · xAI Grok (via OpenAI-compatible API) · Vite + React
+**Stack:** FastAPI · Supabase · pgvector · Google Gemini (via OpenAI-compatible API) · Vite + React
 
 **Definition of done (client):** 5 senior analysts use it for a week and report ≥3 hours saved per analyst per week.
 
@@ -27,7 +27,7 @@ Work through these phases in order. **Backend-first** after foundation: the prod
 - [x] Create Supabase project ([guide](supabase-setup.md))
 - [x] Copy `backend/.env.example` → `backend/.env` and fill Supabase values
 - [x] Copy `frontend/.env.example` → `frontend/.env` and fill Supabase + API URL
-- [x] Add `XAI_API_KEY` to `backend/.env` ([console.x.ai](https://console.x.ai))
+- [x] Add `GEMINI_API_KEY` to `backend/.env` ([aistudio.google.com](https://aistudio.google.com/apikey))
 - [ ] Download sample SEC corpus: `uv run data/download.py` (set `USER_AGENT` in `data/download.py` first)
 - [ ] Verify `DATABASE_URL` uses **direct** host (`db.<ref>.supabase.co`), not the pooler
 
@@ -56,7 +56,7 @@ Work through these phases in order. **Backend-first** after foundation: the prod
 - [x] Generate first migration (`alembic revision --autogenerate`)
 - [x] Review migration — add explicitly:
   - [x] `create extension if not exists vector`
-  - [x] `vector(N)` where `N` = `XAI_EMBEDDING_DIMENSIONS`
+  - [x] `vector(N)` where `N` = `GEMINI_EMBEDDING_DIMENSIONS`
   - [x] generated `tsvector` columns
   - [x] HNSW index (semantic), GIN index (full-text)
   - [x] RLS policies
@@ -105,11 +105,11 @@ Client requirement: *see their own past conversations*
 
 Connect frontend ↔ backend before real AI exists.
 
-- [ ] Backend: `POST /chat/stream` — accept AI SDK message format, return stub stream
-- [ ] Backend: `app/chat/streaming.py` — AI SDK-compatible events
-- [ ] Frontend: chat page with Vercel AI SDK `useChat` → FastAPI
-- [ ] Persist user + assistant messages after stream completes
-- [ ] Test: login → new thread → send message → streamed reply → reload → history intact
+- [x] Backend: `POST /chat/stream` — accept AI SDK message format, return stub stream
+- [x] Backend: `app/chat/streaming.py` — AI SDK-compatible events
+- [x] Frontend: chat page with Vercel AI SDK `useChat` → FastAPI
+- [x] Persist user + assistant messages after stream completes
+- [x] Test: login → new thread → send message → streamed reply → reload → history intact — verified via API calls with real tokens; not yet clicked through in an actual browser
 
 ---
 
@@ -117,23 +117,23 @@ Connect frontend ↔ backend before real AI exists.
 
 Client requirement: *questions about any filing in the curated corpus*
 
-- [ ] Build `backend/ingest/` — read `data/downloads/` manifest
-- [ ] Parse SEC HTML → normalized Markdown → `source_documents`
-- [ ] Chunk with metadata (ticker, company, filing type/date, section, page, offsets)
-- [ ] Embed chunks via xAI (`XAI_BASE_URL` + OpenAI SDK) → `document_chunks.embedding`
-- [ ] Generate full-text `tsvector` on chunks
-- [ ] Ingest sample corpus (AAPL, MSFT, NVDA, AMZN, GOOGL — 2021–2025 10-Ks)
-- [ ] Unit tests: chunking logic, metadata extraction
+- [x] Build `backend/ingest/` — read `data/downloads/` manifest
+- [x] Parse SEC HTML → normalized Markdown → `source_documents`
+- [x] Chunk with metadata (ticker, company, filing type/date, section, page, offsets)
+- [x] Embed chunks via Gemini (`GEMINI_BASE_URL` + OpenAI SDK) → `document_chunks.embedding` — all 2460/2460 chunks embedded (`app/ingest/embed_chunks.py`)
+- [x] Generate full-text `tsvector` on chunks
+- [x] Ingest sample corpus (AAPL, MSFT, NVDA, AMZN, GOOGL — 2021–2025 10-Ks) — 25 documents, 2460 chunks, fully embedded
+- [x] Unit tests: chunking logic, metadata extraction
 
 ---
 
 ## Phase 7 — Hybrid retrieval
 
-- [ ] `app/retrieval/queries.py` — pgvector semantic search
-- [ ] `app/retrieval/queries.py` — Postgres full-text search
-- [ ] `app/retrieval/fusion.py` — Reciprocal Rank Fusion in Python
-- [ ] `app/retrieval/retriever.py` — query → ranked `SourcePassage` list + neighbor chunks
-- [ ] Unit tests: fusion ranking, retriever (no LLM)
+- [x] `app/retrieval/queries.py` — pgvector semantic search
+- [x] `app/retrieval/queries.py` — Postgres full-text search
+- [x] `app/retrieval/fusion.py` — Reciprocal Rank Fusion in Python
+- [x] `app/retrieval/retriever.py` — query → ranked `SourcePassage` list + neighbor chunks
+- [x] Unit tests: fusion ranking, retriever (no LLM) — 8 new tests passing, verified live against real corpus (Apple supply-chain risk, Microsoft Azure queries)
 
 ---
 
@@ -219,7 +219,7 @@ For each, verify: grounded answer · real citations · "not in corpus" when appr
 
 ## Rules of thumb
 
-1. **Backend owns truth** — never call xAI or run retrieval from the browser.
+1. **Backend owns truth** — never call Gemini or run retrieval from the browser.
 2. **One vertical slice before depth** — stub `/chat/stream` early so frontend isn't blocked.
 3. **Test grounding without the UI** — pytest on retrieval + citation validation saves time.
 4. **Don't skip ingestion** — a polished chat UI with an empty corpus fails the pilot.

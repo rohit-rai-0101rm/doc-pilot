@@ -1,6 +1,6 @@
 # Document Copilot — Backend
 
-Python + FastAPI service. Owns auth verification, retrieval, LLM orchestration, chat persistence, and ingestion. The React frontend talks to this API only — never to Grok or Supabase with privileged keys.
+Python + FastAPI service. Owns auth verification, retrieval, LLM orchestration, chat persistence, and ingestion. The React frontend talks to this API only — never to Gemini or Supabase with privileged keys.
 
 For coding conventions, read [AGENTS.md](AGENTS.md) and the root [AGENTS.md](../AGENTS.md).
 
@@ -18,7 +18,7 @@ Supabase project and env values: [docs/guides/supabase-setup.md](../docs/guides/
 ```bash
 cd backend
 cp .env.example .env
-# Edit .env with your Supabase + xAI credentials
+# Edit .env with your Supabase + Gemini credentials
 uv sync
 ```
 
@@ -34,11 +34,11 @@ All config lives in `backend/.env`. The app reads them only through `app/config.
 | `SUPABASE_ANON_KEY` | yes | Public anon key |
 | `SUPABASE_SERVICE_ROLE_KEY` | yes | Backend-only secret key |
 | `DATABASE_URL` | yes | **Direct** Postgres URL (`db.<ref>.supabase.co`) — not the pooler |
-| `XAI_API_KEY` | yes | xAI API key from [console.x.ai](https://console.x.ai) |
-| `XAI_BASE_URL` | no | Default `https://api.x.ai/v1` |
-| `XAI_CHAT_MODEL` | yes | Grok chat model (e.g. `grok-3-mini`) |
-| `XAI_EMBEDDING_MODEL` | yes | Embedding model (e.g. `embed-large-v1`) |
-| `XAI_EMBEDDING_DIMENSIONS` | yes | Vector size — must match pgvector column in migrations |
+| `GEMINI_API_KEY` | yes | Gemini API key from [aistudio.google.com](https://aistudio.google.com/apikey) |
+| `GEMINI_BASE_URL` | no | Default `https://generativelanguage.googleapis.com/v1beta/openai/` |
+| `GEMINI_CHAT_MODEL` | yes | Gemini chat model (e.g. `gemini-2.5-flash`) |
+| `GEMINI_EMBEDDING_MODEL` | yes | Embedding model (e.g. `gemini-embedding-001`) |
+| `GEMINI_EMBEDDING_DIMENSIONS` | yes | Vector size — must match pgvector column in migrations |
 | `ALLOWED_ORIGINS` | yes | Comma-separated CORS origins (e.g. `http://localhost:5173`) |
 
 If a required variable is missing, the app fails on startup with a validation error.
@@ -145,7 +145,7 @@ Full workflow: [docs/guides/backend-setup.md](../docs/guides/backend-setup.md).
 1. **One settings module** — `app/config.py` is the only place that reads `.env`.
 2. **Fail fast** — missing required config raises at import/startup, not at request time.
 3. **No `load_dotenv`** — `pydantic-settings` loads `.env` via `SettingsConfigDict`.
-4. **xAI via OpenAI SDK** — the `openai` package calls `https://api.x.ai/v1`; credentials come from `XAI_*` settings.
+4. **Gemini via OpenAI SDK** — the `openai` package calls Gemini's OpenAI-compatible endpoint; credentials come from `GEMINI_*` settings.
 
 ## Troubleshooting
 

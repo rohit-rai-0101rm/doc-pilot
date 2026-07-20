@@ -16,11 +16,11 @@ class Settings(BaseSettings):
     supabase_service_role_key: str
     database_url: str
 
-    xai_api_key: str
-    xai_base_url: str = "https://api.x.ai/v1"
-    xai_chat_model: str
-    xai_embedding_model: str
-    xai_embedding_dimensions: int = Field(gt=0)
+    gemini_api_key: str
+    gemini_base_url: str = "https://generativelanguage.googleapis.com/v1beta/openai/"
+    gemini_chat_model: str
+    gemini_embedding_model: str
+    gemini_embedding_dimensions: int = Field(gt=0)
 
     # Comma-separated in .env — pydantic-settings cannot JSON-decode list fields from dotenv.
     allowed_origins_env: str = Field(validation_alias="ALLOWED_ORIGINS")
